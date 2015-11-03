@@ -23,8 +23,12 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-		void addCircles();
 
+		void addCircles();
+		void resetToDefault();
+        void increaseDifficulty();
+
+    private:
 		ofVideoGrabber vidGrabber;
 		int vidWidth, vidHeight;
 
@@ -35,7 +39,20 @@ class ofApp : public ofBaseApp{
 		int facesHit;
 		int facesDetected;
 
+		int difficulty;
+		int difficultyHighScore;
+		float circleRadius;
+		float gravity;
+		float circleThreshold;
+		float defaultCircleRadius;
+		float defaultGravity;
+		float defaultCircleThreshold;
+        float timeSinceLastHit;
+        float timeHighScore;
 		std::vector<ofxBox2dCircle*> circles;
+
+		bool hit;
+        int hitFrames;
 
 		ofSoundPlayer sound;
 };

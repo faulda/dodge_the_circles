@@ -10,9 +10,29 @@ std::string intToString(int i)
     return oss.str();
 }
 
+std::string floatToString(float f)
+{
+    std::ostringstream oss;
+    oss << f;
+    return oss.str();
+}
+
 //--------------------------------------------------------------
 void ofApp::setup()
 {
+    // Initial values
+    defaultCircleRadius = 3.0f;
+    defaultGravity = 5;
+    defaultCircleThreshold = 0.02f;
+    timeSinceLastHit = 0;
+    hit = false;
+    resetToDefault();
+    hitFrames = 0;
+    difficulty = 1;
+
+    difficultyHighScore = 0;
+    timeHighScore = 0;
+
     ofSetFrameRate(30);
 
     vidWidth = 320; //640;
@@ -25,26 +45,30 @@ void ofApp::setup()
     std::cout << "actual size is " << vidGrabber.width << " by " << vidGrabber.height << std::endl;
 
     haarFinder.setup("haarcascade_frontalface_default.xml");
-    haarFinder.setScaleHaar(1.09);
+    haarFinder.setScaleHaar(1.2);
 
     box2d.init();
     box2d.enableEvents();
-    box2d.setGravity(0, 30);
+    box2d.setGravity(0, gravity);
     // physics frame rate
-    box2d.setFPS(60);
+    box2d.setFPS(30);
 
-    sound.loadSound("sfx/2.mp3");
+    sound.loadSound("sfx/punch.wav");
     sound.setMultiPlay(true);
     sound.setLoop(false);
 
     facesHit = 0;
     facesDetected = 0;
-
 }
 
 //--------------------------------------------------------------
 void ofApp::update()
 {
+    timeSinceLastHit += 1.0f / ofGetFrameRate();
+
+    difficultyHighScore = std::max(difficultyHighScore, difficulty);
+    timeHighScore = std::max(timeHighScore, timeSinceLastHit);
+
     ofBackground(ofColor::whiteSmoke);
 
     vidGrabber.update();
@@ -73,6 +97,10 @@ void ofApp::update()
                     // Hit!
                     sound.play();
                     facesHit++;
+                    hit = true;
+
+                    resetToDefault();
+                    timeSinceLastHit = 0.0f;
 
                     // Delete the circle
                     delete circles[i];
@@ -83,6 +111,10 @@ void ofApp::update()
         }
     }
 
+    if(timeSinceLastHit > 2.0f * difficulty)
+    {
+        increaseDifficulty();
+    }
 }
 
 //--------------------------------------------------------------
@@ -92,11 +124,31 @@ void ofApp::draw()
     ofSetColor(ofColor::black);
     ofDrawBitmapString("Faces detected: " + intToString(facesDetected), 0, 15);
     ofDrawBitmapString("Faces hit: " + intToString(facesHit), 0, 30);
+    ofDrawBitmapString("Current difficulty: " + intToString(difficulty), 0, 45);
+    ofDrawBitmapString("Dodge the falling circles!", 250, 20);
+    ofDrawBitmapString("High score: ", 270, 35);
+    ofDrawBitmapString("Time: " + floatToString(timeHighScore), 280, 50);
+    ofDrawBitmapString("Difficulty: " + intToString(difficultyHighScore), 280, 65);
+
 
     ofSetColor(ofColor::white);
+    if(hit)
+    {
+        ofSetColor(ofColor::orange);
+        hitFrames++;
+        if(hitFrames > 4)
+        {
+            hit = false;
+            hitFrames = 0;
+        }
+    }
+
     ofNoFill();
+
     // Main video
-    ofTranslate(50, 50);
+    ofTranslate(30, 70);
+    ofPushMatrix();
+    ofScale(2,2,1);
     vidGrabber.draw(0, 0);
     for (int i = 0; i < haarFinder.blobs.size(); i++) {
         ofRect(haarFinder.blobs[i].boundingRect);
@@ -110,8 +162,9 @@ void ofApp::draw()
         {
             circles[i]->draw();
         }
-
     }
+
+    ofPopMatrix();
     std::cout << ofGetFrameRate() << "\n";
 }
 
@@ -119,19 +172,37 @@ void ofApp::addCircles()
 {
     for(int i = 0; i < haarFinder.blobs.size(); ++i)
     {
-        if(ofRandom(0.0f, 1.0f) < 0.1)
+        if(ofRandom(0.0f, 1.0f) < circleThreshold)
         {
             ofPoint centroid = haarFinder.blobs[i].centroid;
+            float length = haarFinder.blobs[i].boundingRect.width;
 
             circles.push_back(new ofxBox2dCircle);
-            circles.back()->setPhysics(3.0, 0.3, 0.1);
+            circles.back()->setPhysics(2.0, 0.3, 0.05);
             circles.back()->enableGravity(true);
             circles.back()->setMassFromShape = true;
-            circles.back()->setup(box2d.getWorld(), centroid.x + ofRandomf() * 10, 0, 7.0f);
+            circles.back()->setup(box2d.getWorld(), centroid.x + ofRandom(-1.0f, 1.0f) * (length / 2.0f), 0, circleRadius);
             //circles.back()->setVelocity(ofRandomf(), -1 * initialVelocity);
         }
     }
+}
 
+void ofApp::resetToDefault()
+{
+    difficulty = 0;
+
+    gravity = defaultGravity;
+    circleRadius = defaultCircleRadius;
+    circleThreshold = defaultCircleThreshold;
+}
+
+void ofApp::increaseDifficulty()
+{
+    difficulty++;
+
+    gravity += 10;
+    circleRadius += 1.0f;
+    circleThreshold += 0.02;
 }
 
 //--------------------------------------------------------------
