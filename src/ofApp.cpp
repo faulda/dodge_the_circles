@@ -2,6 +2,7 @@
 
 #include <string>
 #include <sstream>
+#include <cmath>
 
 std::string intToString(int i)
 {
@@ -12,6 +13,7 @@ std::string intToString(int i)
 
 std::string floatToString(float f)
 {
+    f = floorf(f * 10) / 10;
     std::ostringstream oss;
     oss << f;
     return oss.str();
@@ -64,7 +66,10 @@ void ofApp::setup()
 //--------------------------------------------------------------
 void ofApp::update()
 {
-    timeSinceLastHit += 1.0f / ofGetFrameRate();
+    if(facesDetected > 0)
+    {
+        timeSinceLastHit += 1.0f / ofGetFrameRate();
+    }
 
     difficultyHighScore = std::max(difficultyHighScore, difficulty);
     timeHighScore = std::max(timeHighScore, timeSinceLastHit);
@@ -125,16 +130,18 @@ void ofApp::draw()
     ofDrawBitmapString("Faces detected: " + intToString(facesDetected), 0, 15);
     ofDrawBitmapString("Faces hit: " + intToString(facesHit), 0, 30);
     ofDrawBitmapString("Current difficulty: " + intToString(difficulty), 0, 45);
+    ofDrawBitmapString("Current time: " + floatToString(timeSinceLastHit), 0, 60);
+
     ofDrawBitmapString("Dodge the falling circles!", 250, 20);
-    ofDrawBitmapString("High score: ", 270, 35);
-    ofDrawBitmapString("Time: " + floatToString(timeHighScore), 280, 50);
-    ofDrawBitmapString("Difficulty: " + intToString(difficultyHighScore), 280, 65);
+    ofDrawBitmapString("High score: ", 570, 35);
+    ofDrawBitmapString("Time: " + floatToString(timeHighScore), 580, 50);
+    ofDrawBitmapString("Difficulty: " + intToString(difficultyHighScore), 580, 65);
 
 
     ofSetColor(ofColor::white);
     if(hit)
     {
-        ofSetColor(ofColor::orange);
+        ofSetColor(ofColor::red);
         hitFrames++;
         if(hitFrames > 4)
         {
