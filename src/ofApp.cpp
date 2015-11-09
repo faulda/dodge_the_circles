@@ -44,6 +44,9 @@ void ofApp::setup()
     vidGrabber.setDesiredFrameRate(30);
     vidGrabber.initGrabber(vidWidth, vidHeight);
 
+    flipHorizontal = true;
+    colorImg.allocate(vidWidth, vidHeight);
+
     std::cout << "actual size is " << vidGrabber.width << " by " << vidGrabber.height << std::endl;
 
     haarFinder.setup("haarcascade_frontalface_default.xml");
@@ -80,7 +83,15 @@ void ofApp::update()
 
     if(vidGrabber.isFrameNew())
     {
-        haarFinder.findHaarObjects(vidGrabber.getPixelsRef());
+        colorImg.setFromPixels(vidGrabber.getPixels(), 320,240);
+
+        // Flip horizontally
+        if(flipHorizontal)
+        {
+            colorImg.mirror(false, true);
+        }
+
+        haarFinder.findHaarObjects(colorImg.getPixelsRef());
     }
 
     facesDetected = haarFinder.blobs.size();
@@ -133,6 +144,8 @@ void ofApp::draw()
     ofDrawBitmapString("Current time: " + floatToString(timeSinceLastHit), 0, 60);
 
     ofDrawBitmapString("Dodge the falling circles!", 250, 20);
+    ofDrawBitmapString("Press 'f' to flip the camera", 250, 50);
+
     ofDrawBitmapString("High score: ", 570, 35);
     ofDrawBitmapString("Time: " + floatToString(timeHighScore), 580, 50);
     ofDrawBitmapString("Difficulty: " + intToString(difficultyHighScore), 580, 65);
@@ -156,7 +169,8 @@ void ofApp::draw()
     ofTranslate(30, 70);
     ofPushMatrix();
     ofScale(2,2,1);
-    vidGrabber.draw(0, 0);
+    //vidGrabber.draw(0, 0);
+    colorImg.draw(0, 0);
     for (int i = 0; i < haarFinder.blobs.size(); i++) {
         ofRect(haarFinder.blobs[i].boundingRect);
     }
@@ -215,7 +229,11 @@ void ofApp::increaseDifficulty()
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key)
 {
-
+    // Press f to toggle flipping camera
+    if(key == 'f')
+    {
+        flipHorizontal = !flipHorizontal;
+    }
 }
 
 //--------------------------------------------------------------

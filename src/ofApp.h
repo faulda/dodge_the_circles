@@ -32,6 +32,8 @@ class ofApp : public ofBaseApp{
 		ofVideoGrabber vidGrabber;
 		int vidWidth, vidHeight;
 
+        bool flipHorizontal;
+        ofxCvColorImage	colorImg;
 		ofxCvHaarFinder haarFinder;
 
         ofxBox2d box2d;
